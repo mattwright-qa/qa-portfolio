@@ -1,0 +1,46 @@
+name: Portfolio check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prove-the-work:
+    name: Run safe QA checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: test-automation/package-lock.json
+      - name: Confirm the safe AI demo exposes its intended bug
+        run: |
+          if node --test ai-in-qa/tests/cart-retention.test.js; then
+            echo "The practice bug unexpectedly passed. Recheck the demo before using it for the course."
+            exit 1
+          fi
+          echo "Expected red confirmed. The demo still gives learners a real bug to investigate."
+      - name: Install Playwright project
+        working-directory: test-automation
+        run: npm ci
+      - name: Install Chromium
+        working-directory: test-automation
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright checks
+        working-directory: test-automation
+        run: npm test
+      - name: Save the Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: test-automation/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
