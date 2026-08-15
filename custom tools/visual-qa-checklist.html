@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Visual QA Checklist</title>
+  <style>
+    /* Dark Theme Variables & Base Styles */
+    :root {
+      --bg-color: #0f1115;
+      --sidebar-bg: #161920;
+      --card-bg: #1e222b;
+      --card-border: #2c313d;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #2dd4bf;
+      --accent-hover: #14b8a6;
+      --danger: #ef4444;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Layout */
+    .sidebar {
+      width: 280px;
+      background-color: var(--sidebar-bg);
+      border-right: 1px solid var(--card-border);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .header {
+      padding: 2rem 3rem;
+      border-bottom: 1px solid var(--card-border);
+      background-color: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      z-index: 10;
+    }
+
+    .checklist-container {
+      flex: 1;
+      padding: 2rem 3rem;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
+    /* Controls & Buttons */
+    .controls { display: flex; flex-direction: column; gap: 0.5rem; }
+    button {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    button:hover { background: rgba(45, 212, 191, 0.1); }
+    button.danger { border-color: var(--danger); color: var(--danger); }
+    button.danger:hover { background: rgba(239, 68, 68, 0.1); }
+
+    /* Progress Bar */
+    .progress-wrapper { width: 100%; max-width: 600px; text-align: center; }
+    .progress-bar {
+      width: 100%;
+      height: 16px;
+      background: var(--card-border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 0.5rem 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .progress-text { color: var(--text-muted); font-size: 0.85rem; }
+
+    /* Navigation */
+    .nav-links { list-style: none; display: flex; flex-direction: column; gap: 0.25rem; }
+    .nav-links li a {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .nav-links li a:hover { background: var(--card-bg); color: var(--text-main); }
+    .nav-count { background: var(--card-border); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }
+
+    /* Checklist Sections */
+    .category-section { margin-bottom: 3rem; }
+    .category-title {
+      font-size: 1.25rem;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+      padding-top: 1rem;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      transition: border-color 0.2s;
+    }
+    .check-item:hover { border-color: var(--text-muted); }
+    .check-item.checked { border-color: var(--accent); opacity: 0.8; }
+    
+    .check-item input[type="checkbox"] {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--text-muted);
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .check-item input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .check-item input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      color: var(--bg-color);
+      font-weight: bold;
+      font-size: 14px;
+      top: -1px;
+      left: 3px;
+    }
+
+    .check-content label { font-weight: 500; cursor: pointer; display: block; }
+    
+    /* Signature */
+    .signature {
+      position: absolute;
+      bottom: 2rem;
+      right: 3rem;
+      font-family: 'Brush Script MT', 'Lucida Handwriting', cursive;
+      font-size: 2.5rem;
+      color: rgba(255, 255, 255, 0.3);
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    @media print {
+      .sidebar, .header, .signature { display: none !important; }
+      .main-content { overflow: visible; height: auto; display: block; }
+      body { background: white; color: black; height: auto; overflow: visible; }
+      .check-item { break-inside: avoid; border-color: #ccc; background: white; }
+      .check-item.checked { border-color: black; }
+      .category-title { color: black; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="controls">
+      <button onclick="exportJSON()">↓ Export JSON</button>
+      <button onclick="window.print()">⎘ Export PDF</button>
+      <button class="danger" onclick="resetChecklist()">↺ Reset Checklist</button>
+    </div>
+    <nav>
+      <ul class="nav-links" id="nav-links-container">
+        <!-- Nav links injected via JS -->
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="header">
+      <h2>INTERACTIVE VISUAL QA CHECKLIST</h2>
+      <div class="progress-wrapper">
+        <h4 id="progress-percent">0% COMPLETE</h4>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-text" id="progress-text">0 checked • 72 remaining • 72 total checks</div>
+      </div>
+    </div>
+
+    <div class="checklist-container" id="checklist-container">
+      <!-- Sections injected via JS -->
+    </div>
+    
+    <div class="signature">Matthew Wright-Oliver</div>
+  </main>
+
+  <script>
+    // Visual QA Checklist Data
+    const checklistData = [
+      {
+        id: "layout",
+        title: "Layout",
+        items: [
+          { id: "l1", title: "Main content uses available width without leaving a strange empty column." },
+          { id: "l2", title: "Headings align with the content below them." },
+          { id: "l3", title: "Cards in a row have consistent height, spacing and image crop." },
+          { id: "l4", title: "Primary actions are visually grouped with the thing they act on." },
+          { id: "l5", title: "No element feels accidentally shifted, floating or lonely." },
+          { id: "l6", title: "The layout still makes sense when one card has a longer title." },
+          { id: "l7", title: "Sticky headers, sidebars and toolbars do not cover content." },
+          { id: "l8", title: "Modals and drawers have enough breathing room on small screens." }
+        ]
+      },
+      {
+        id: "typography",
+        title: "Typography",
+        items: [
+          { id: "t1", title: "Button text fits without wrapping awkwardly." },
+          { id: "t2", title: "Long words, URLs, emails and file names do not break the container." },
+          { id: "t3", title: "Hero-scale type is only used where the page can support it." },
+          { id: "t4", title: "Dense tool panels use tighter, smaller headings than landing pages." },
+          { id: "t5", title: "Line length feels readable, not squeezed or stretched." },
+          { id: "t6", title: "The font weight hierarchy makes scanning easy." },
+          { id: "t7", title: "Labels, helper text and errors are readable at mobile size." }
+        ]
+      },
+      {
+        id: "responsive",
+        title: "Responsive",
+        items: [
+          { id: "r1", title: "Desktop, tablet and phone all use space intentionally." },
+          { id: "r2", title: "The design does not center everything just because the screen got smaller." },
+          { id: "r3", title: "Controls wrap into clean rows, not random steps." },
+          { id: "r4", title: "Images keep useful subject matter visible after cropping." },
+          { id: "r5", title: "Tables either scroll cleanly or transform into readable blocks." },
+          { id: "r6", title: "Navigation works with long labels and active states." },
+          { id: "r7", title: "Important content appears before decorative content on mobile." },
+          { id: "r8", title: "No horizontal scrolling appears unless it is an intentional table or code block." }
+        ]
+      },
+      {
+        id: "mobile-touch",
+        title: "Mobile Touch",
+        items: [
+          { id: "m1", title: "Tap targets are comfortably sized and spaced." },
+          { id: "m2", title: "Every tap target sits on the control the user can see, not beside it." },
+          { id: "m3", title: "Closing a popup or overlay does not also trigger the control behind it." },
+          { id: "m4", title: "Thumb-reach actions are not hidden in awkward corners." },
+          { id: "m5", title: "Inputs remain visible when the keyboard opens." },
+          { id: "m6", title: "Date pickers, dropdowns and steppers are usable on the actual device." },
+          { id: "m7", title: "Fixed footers do not block the last form field." },
+          { id: "m8", title: "Gestures do not conflict with browser or OS gestures." },
+          { id: "m9", title: "Landscape mode is not broken if the app supports it." },
+          { id: "m10", title: "Checked on a real device, not only the simulator or the editor." }
+        ]
+      },
+      {
+        id: "states",
+        title: "States",
+        items: [
+          { id: "s1", title: "Loading states show what is waiting, not just a spinner forever." },
+          { id: "s2", title: "Loading only shows while it is loading, and reads as done the instant it is done." },
+          { id: "s3", title: "Empty states tell the user what happened and what to do next." },
+          { id: "s4", title: "Error states preserve the user input where possible." },
+          { id: "s5", title: "Disabled states explain why the action is unavailable when needed." },
+          { id: "s6", title: "Success states confirm the actual outcome." },
+          { id: "s7", title: "Reached from every entry point (menu, deep link, popup), the screen opens correct and complete." },
+          { id: "s8", title: "Skeletons, placeholders and final content do not jump the layout badly." },
+          { id: "s9", title: "Slow-network behavior is tested, not guessed." },
+          { id: "s10", title: "Offline or reconnect behavior is visible where relevant." }
+        ]
+      },
+      {
+        id: "forms",
+        title: "Forms",
+        items: [
+          { id: "f1", title: "Required fields are clear before submit." },
+          { id: "f2", title: "Errors appear next to the field they belong to." },
+          { id: "f3", title: "The first invalid field is easy to find." },
+          { id: "f4", title: "The form works with autofill and pasted values." },
+          { id: "f5", title: "Numeric, currency, phone, date and code fields accept realistic formats." },
+          { id: "f6", title: "The submit button cannot be tapped twice into duplicate records." },
+          { id: "f7", title: "Form progress is preserved when a recoverable error occurs." }
+        ]
+      },
+      {
+        id: "images",
+        title: "Images",
+        items: [
+          { id: "img1", title: "Images are not blurry, stretched or cropped past the point of usefulness." },
+          { id: "img2", title: "Important people, products, UI states or diagrams are visible without guessing." },
+          { id: "img3", title: "Missing images have a graceful fallback." },
+          { id: "img4", title: "Lazy-loaded images do not leave awkward blank gaps while scrolling." },
+          { id: "img5", title: "Image aspect ratios stay stable during loading." },
+          { id: "img6", title: "Captions describe what is actually visible." },
+          { id: "img7", title: "Dark images do not swallow dark text or controls." }
+        ]
+      },
+      {
+        id: "accessibility",
+        title: "Accessibility",
+        items: [
+          { id: "a1", title: "Text contrast is readable in normal and hover states." },
+          { id: "a2", title: "Focus states are visible and not clipped." },
+          { id: "a3", title: "Keyboard order follows the visual order." },
+          { id: "a4", title: "Icon-only buttons have accessible names." },
+          { id: "a5", title: "Color is not the only way to understand status." },
+          { id: "a6", title: "Motion can be tolerated and does not block use." },
+          { id: "a7", title: "Zooming text does not cause overlap." },
+          { id: "a8", title: "Screen reader labels match visible intent." }
+        ]
+      },
+      {
+        id: "polish",
+        title: "Polish",
+        items: [
+          { id: "p1", title: "Hover, active and selected states feel intentional." },
+          { id: "p2", title: "Borders, shadows and radii are consistent." },
+          { id: "p3", title: "Spacing follows a rhythm instead of tiny random offsets." },
+          { id: "p4", title: "Microcopy sounds human and specific." },
+          { id: "p5", title: "The most important thing on the screen is obvious in three seconds." },
+          { id: "p6", title: "The page still looks cared for with real data, not only perfect demo data." },
+          { id: "p7", title: "The design does not hide a broken workflow behind pretty styling." }
+        ]
+      }
+    ];
+
+    const STORAGE_KEY = 'visual_qa_checklist_full_state';
+    let totalChecks = 0;
+    
+    // Count total checks
+    checklistData.forEach(cat => totalChecks += cat.items.length);
+
+    function getSavedState() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    }
+
+    function toggleCheck(id) {
+      const state = getSavedState();
+      state[id] = !state[id];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      render();
+    }
+
+    function resetChecklist() {
+      if(confirm("Are you sure you want to clear all progress?")) {
+        localStorage.removeItem(STORAGE_KEY);
+        render();
+      }
+    }
+
+    function exportJSON() {
+      const state = getSavedState();
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `visual-qa-checklist-export-${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function render() {
+      const state = getSavedState();
+      let checkedCount = 0;
+      
+      const container = document.getElementById('checklist-container');
+      const navContainer = document.getElementById('nav-links-container');
+      
+      container.innerHTML = '';
+      navContainer.innerHTML = '';
+
+      checklistData.forEach(category => {
+        let catChecked = 0;
+        
+        // Build items HTML
+        const itemsHtml = category.items.map(item => {
+          const isChecked = !!state[item.id];
+          if (isChecked) { checkedCount++; catChecked++; }
+          
+          return `
+            <div class="check-item ${isChecked ? 'checked' : ''}">
+              <input type="checkbox" id="${item.id}" ${isChecked ? 'checked' : ''} onchange="toggleCheck('${item.id}')">
+              <div class="check-content">
+                <label for="${item.id}">${item.title}</label>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Inject category into main view
+        container.innerHTML += `
+          <div class="category-section" id="cat-${category.id}">
+            <h3 class="category-title">## ${category.title} (${catChecked}/${category.items.length} checked)</h3>
+            ${itemsHtml}
+          </div>
+        `;
+
+        // Inject nav link
+        navContainer.innerHTML += `
+          <li>
+            <a href="#cat-${category.id}">
+              ${category.title} <span class="nav-count">${catChecked}/${category.items.length}</span>
+            </a>
+          </li>
+        `;
+      });
+
+      // Update Header Progress
+      const percent = Math.round((checkedCount / totalChecks) * 100) || 0;
+      document.getElementById('progress-percent').innerText = `${percent}% COMPLETE`;
+      document.getElementById('progress-fill').style.width = `${percent}%`;
+      document.getElementById('progress-text').innerText = `${checkedCount} checked • ${totalChecks - checkedCount} remaining • ${totalChecks} total checks`;
+    }
+
+    // Initialize
+    render();
+  </script>
+</body>
+</html>

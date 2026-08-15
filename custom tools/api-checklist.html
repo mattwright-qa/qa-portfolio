@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive API Testing Checklist</title>
+  <style>
+    /* Dark Theme Variables & Base Styles */
+    :root {
+      --bg-color: #0f1115;
+      --sidebar-bg: #161920;
+      --card-bg: #1e222b;
+      --card-border: #2c313d;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #2dd4bf;
+      --accent-hover: #14b8a6;
+      --danger: #ef4444;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Layout */
+    .sidebar {
+      width: 280px;
+      background-color: var(--sidebar-bg);
+      border-right: 1px solid var(--card-border);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .header {
+      padding: 2rem 3rem;
+      border-bottom: 1px solid var(--card-border);
+      background-color: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      z-index: 10;
+    }
+
+    .checklist-container {
+      flex: 1;
+      padding: 2rem 3rem;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
+    /* Controls & Buttons */
+    .controls { display: flex; flex-direction: column; gap: 0.5rem; }
+    button {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    button:hover { background: rgba(45, 212, 191, 0.1); }
+    button.danger { border-color: var(--danger); color: var(--danger); }
+    button.danger:hover { background: rgba(239, 68, 68, 0.1); }
+
+    /* Progress Bar */
+    .progress-wrapper { width: 100%; max-width: 600px; text-align: center; }
+    .progress-bar {
+      width: 100%;
+      height: 16px;
+      background: var(--card-border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 0.5rem 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .progress-text { color: var(--text-muted); font-size: 0.85rem; }
+
+    /* Navigation */
+    .nav-links { list-style: none; display: flex; flex-direction: column; gap: 0.25rem; }
+    .nav-links li a {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .nav-links li a:hover { background: var(--card-bg); color: var(--text-main); }
+    .nav-count { background: var(--card-border); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }
+
+    /* Checklist Sections */
+    .category-section { margin-bottom: 3rem; }
+    .category-title {
+      font-size: 1.25rem;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+      padding-top: 1rem;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      transition: border-color 0.2s;
+    }
+    .check-item:hover { border-color: var(--text-muted); }
+    .check-item.checked { border-color: var(--accent); opacity: 0.8; }
+    
+    .check-item input[type="checkbox"] {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--text-muted);
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+      margin-top: 2px;
+      position: relative;
+    }
+    .check-item input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .check-item input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      color: var(--bg-color);
+      font-weight: bold;
+      font-size: 14px;
+      top: -1px;
+      left: 3px;
+    }
+
+    .check-content label { font-weight: 600; cursor: pointer; display: block; margin-bottom: 0.25rem; }
+    .check-content p { color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; }
+
+    /* Signature */
+    .signature {
+      position: absolute;
+      bottom: 2rem;
+      right: 3rem;
+      font-family: 'Brush Script MT', 'Lucida Handwriting', cursive;
+      font-size: 2.5rem;
+      color: rgba(255, 255, 255, 0.3);
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    @media print {
+      .sidebar, .header, .signature { display: none !important; }
+      .main-content { overflow: visible; height: auto; display: block; }
+      body { background: white; color: black; height: auto; overflow: visible; }
+      .check-item { break-inside: avoid; border-color: #ccc; background: white; }
+      .check-item.checked { border-color: black; }
+      .check-content p { color: #333; }
+      .category-title { color: black; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="controls">
+      <button onclick="exportJSON()">↓ Export JSON</button>
+      <button onclick="window.print()">⎘ Export PDF</button>
+      <button class="danger" onclick="resetChecklist()">↺ Reset Checklist</button>
+    </div>
+    <nav>
+      <ul class="nav-links" id="nav-links-container">
+        <!-- Nav links injected via JS -->
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="header">
+      <h2>INTERACTIVE API TESTING CHECKLIST</h2>
+      <div class="progress-wrapper">
+        <h4 id="progress-percent">0% COMPLETE</h4>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-text" id="progress-text">0 checked • 56 remaining • 56 total checks</div>
+      </div>
+    </div>
+
+    <div class="checklist-container" id="checklist-container">
+      <!-- Sections injected via JS -->
+    </div>
+    
+    <div class="signature">Matthew Wright-Oliver</div>
+  </main>
+
+  <script>
+    // Checklist Data
+    const checklistData = [
+      {
+        id: "docs",
+        title: "Documentation & Planning",
+        items: [
+          { id: "d1", title: "Make a list of the APIs or endpoints that need testing", desc: "You cannot test what you have not written down. Start with the actual list of addresses you have to cover." },
+          { id: "d2", title: "Check that each API has a clear purpose, examples, parameters, and responses", desc: "If the docs cannot tell you what good looks like, you have no way to tell when it is broken." },
+          { id: "d3", title: "Check that authentication, authorization, rate limits, and errors are documented", desc: "Know the rules before you test them: who gets in, who is blocked, how often you can call, and what errors to expect." },
+          { id: "d4", title: "Check the user journey or workflow that depends on this API", desc: "An endpoint is usually one step in a bigger flow. Follow the real path a user takes through it, end to end." },
+          { id: "d5", title: "Check whether any privacy, security, or industry rules apply", desc: "Some data (health, payments, personal info) carries legal rules. Find out which apply before you go poking." },
+          { id: "d6", title: "Decide which checks should be manual, automated, or supported by an API testing tool", desc: "Not everything needs a script. Decide what a human checks once and what a machine should check forever." }
+        ]
+      },
+      {
+        id: "inputs",
+        title: "Request Inputs",
+        items: [
+          { id: "i1", title: "Check that the right HTTP method and URL are used for each endpoint", desc: "GET to read, POST to create. The wrong verb, or a small typo in the address, is a common silent bug." },
+          { id: "i2", title: "Check that required headers such as Content-Type and Authorization are handled correctly", desc: "The envelope matters. The wrong format label or a missing token, and the request fails before it even starts." },
+          { id: "i3", title: "Try valid, invalid, and missing path or query parameters", desc: "Send a good id, a junk id, and no id at all. A safe API handles all three without falling over." },
+          { id: "i4", title: "Check that required body fields cannot be missing", desc: "Leave out a required field. The API should say exactly what is missing, not crash or save half a record." },
+          { id: "i5", title: "Check that wrong field names, wrong types, extra fields, and incomplete bodies are handled safely", desc: "Send a number where a word goes, a typo in a field name, an extra field it never asked for. It should reject that cleanly, not choke on it." },
+          { id: "i6", title: "For a browser-facing API, check CORS: allowed origins and the preflight", desc: "A web API called from another site needs the right CORS headers and a correct OPTIONS preflight, or the browser blocks the real call before it is even sent." }
+        ]
+      },
+      {
+        id: "response",
+        title: "Response & Status",
+        items: [
+          { id: "r1", title: "Check that successful requests return the right 2xx status", desc: "A create should be 201, a plain read 200. The number should match what actually happened." },
+          { id: "r2", title: "Check that failed requests return the right 4xx or 5xx status", desc: "A failure must look like a failure. A 200 with an error message hidden inside is a trap for everyone downstream." },
+          { id: "r3", title: "Check that the response body has the expected fields, types, and values", desc: "Do not stop at the status code. Open the body and confirm the right data, in the right shape, is actually there." },
+          { id: "r4", title: "Check that response headers such as Content-Type are correct", desc: "The reply should say what it is. JSON labelled as plain text confuses every client that tries to read it." },
+          { id: "r5", title: "Check that response time stays within the agreed limit", desc: "The right answer, too slow, is still a fail. Hold it to the speed the team agreed on." },
+          { id: "r6", title: "Check caching and conditional requests (ETag, 304 Not Modified)", desc: "If the API caches, a repeat request with If-None-Match should come back 304 with no body, not the whole payload again. Stale or wrong caching quietly serves old data." }
+        ]
+      },
+      {
+        id: "auth",
+        title: "Authentication & Authorization",
+        items: [
+          { id: "a1", title: "Check that protected APIs reject requests without a token", desc: "No token should mean no entry: a 401. Try every protected endpoint with the token removed." },
+          { id: "a2", title: "Check that expired or invalid tokens are rejected", desc: "An old or tampered token must be refused, never quietly accepted." },
+          { id: "a3", title: "Check that token refresh or login expiry behaves as expected", desc: "Sessions should end when they are meant to, and refresh when they are meant to. Test both edges." },
+          { id: "a4", title: "Check that users cannot access another user's data", desc: "Log in as one user and ask for another user's record by id. The answer must be no (403). This single test catches real privacy leaks." },
+          { id: "a5", title: "Check that admin-only actions are blocked for regular users", desc: "Hiding a button is not security. Call the admin-only address as a normal user and confirm it is still blocked." }
+        ]
+      },
+      {
+        id: "security",
+        title: "Security Checks",
+        items: [
+          { id: "s1", title: "Try unsafe inputs such as scripts, SQL-like text, or special characters", desc: "Paste in a script tag or a quote-heavy string. The API should treat it as plain text, never run it." },
+          { id: "s2", title: "Try changing IDs, prices, roles, or other values the user should not control", desc: "Set your price to 1, your role to admin, the id to someone else’s. The server must ignore or reject every one." },
+          { id: "s3", title: "Check that unsupported methods and content types are rejected", desc: "Send a DELETE where only GET is allowed, or XML where it wants JSON. It should say no, not try to guess." },
+          { id: "s4", title: "Check that sensitive data is not returned in responses", desc: "Read the body closely. Password hashes, full card numbers, and internal ids should never come back." },
+          { id: "s5", title: "Check that sensitive data is not exposed in error messages or logs", desc: "Errors should help, not leak. No stack traces, secrets, or raw queries spilled into the message." }
+        ]
+      },
+      {
+        id: "data",
+        title: "Data & Edge Cases",
+        items: [
+          { id: "da1", title: "Check empty values, very long values, and special characters", desc: "Send nothing, send a novel, send emoji and accents. The edges are where things quietly break." },
+          { id: "da2", title: "Check zero, negative, minimum, and maximum numbers", desc: "Try 0, -1, and a huge number where a quantity goes. Confirm each is accepted or refused on purpose, not by accident." },
+          { id: "da3", title: "Check pagination, sorting, and filtering", desc: "Ask for page 99, sort by a field that does not exist, filter down to nothing. The list should stay sensible." },
+          { id: "da4", title: "Check duplicate requests", desc: "Send the same create twice. Do you get two orders, or a clean rejection? Decide which is right, then test for it." },
+          { id: "da5", title: "Check optional, nullable, and default values", desc: "Leave the optional fields out. The API should fill in its defaults, not break or invent wild values." }
+        ]
+      },
+      {
+        id: "workflow",
+        title: "Workflow & State",
+        items: [
+          { id: "w1", title: "Check that create requests actually create the record", desc: "After a create, go and fetch it. A “201 Created” is not the whole story if a follow-up GET cannot find it." },
+          { id: "w2", title: "Check that update requests only change the intended fields", desc: "Change one field, then check the rest stayed exactly as they were. Updates love to touch things you did not ask about." },
+          { id: "w3", title: "Check that delete or archive requests behave as expected", desc: "After a delete, the record should be gone, or marked archived. Confirm it, do not assume it." },
+          { id: "w4", title: "Check that failed requests do not leave partial changes behind", desc: "If a request fails halfway, nothing should be saved. Half a record is worse than none at all." },
+          { id: "w5", title: "Check that repeated PUT, PATCH, or DELETE requests are safe where they should be", desc: "Sending the same update twice should land in the same place, not double-charge or double-delete." }
+        ]
+      },
+      {
+        id: "limits",
+        title: "Reliability & Limits",
+        items: [
+          { id: "l1", title: "Check rate limiting or too-many-requests behavior", desc: "Hammer the endpoint. It should slow you down with a clear 429, not fall over." },
+          { id: "l2", title: "Check that a 429 tells the client how long to wait (Retry-After)", desc: "A rate limit with no Retry-After header leaves a well-behaved client guessing. The honest answer says exactly when to try again." },
+          { id: "l3", title: "Check what happens when another service is slow or unavailable", desc: "When something it depends on is down, it should fail gracefully, not hang forever waiting." },
+          { id: "l4", title: "Check that timeouts are handled cleanly", desc: "A request that takes too long should give up with a clear message, not leave the user staring at a spinner." },
+          { id: "l5", title: "Check that error messages are clear enough to understand", desc: "Could the next person fix the problem from the message alone? If not, the error is too vague." }
+        ]
+      },
+      {
+        id: "watch",
+        title: "Watching & Reproducing",
+        items: [
+          { id: "wa1", title: "Watch the real network traffic, not just the screen", desc: "Open the browser Network tab, or a proxy on mobile, and read the actual calls. A UI glitch is often a 500 underneath that the screen never showed you." },
+          { id: "wa2", title: "On mobile, capture the app’s calls through a proxy", desc: "Charles Proxy, Proxyman, or mitmproxy with its certificate installed shows what a phone app really sends. Mind the Android 7 system-cert rule and certificate pinning." },
+          { id: "wa3", title: "Save a HAR or copy the request as cURL so a failure can be replayed", desc: "Hand the developer the exact request and response, not a screenshot of a spinner. A failure you can replay is a failure that gets fixed." },
+          { id: "wa4", title: "Force a slow, offline, or flaky connection and watch the client", desc: "Throttle to Slow 3G or drop the network mid-request. The app should show a clear error and recover, not freeze or quietly carry on as if the call succeeded." }
+        ]
+      },
+      {
+        id: "contracts",
+        title: "Contracts & Compatibility",
+        items: [
+          { id: "c1", title: "Check that the API still matches the documentation or schema", desc: "The docs are a promise. When the real response drifts from them, someone’s code is about to break." },
+          { id: "c2", title: "Check that field names have not changed unexpectedly", desc: "Renaming 'total' to 'amount' quietly breaks every client reading 'total'. Catch it before they do." },
+          { id: "c3", title: "Check that field types are still the same", desc: "A number that turns into a string overnight breaks the code that did the maths on it. Watch the types." },
+          { id: "c4", title: "Check that older clients would still understand the response", desc: "New does not give you the right to break old. Confirm an older app can still read the reply." },
+          { id: "c5", title: "Check that deprecated fields or versions are handled clearly", desc: "When you retire a field, warn first and remove later. No silent disappearances." }
+        ]
+      },
+      {
+        id: "graphql",
+        title: "GraphQL (if your API uses it)",
+        items: [
+          { id: "g1", title: "Treat a 200 with an errors array as a failure", desc: "GraphQL usually answers 200 even when it failed; the real outcome is in the errors array. Assert on errors and the data shape, never on the status code alone." },
+          { id: "g2", title: "Check authorization on each field, not just the endpoint", desc: "The caller picks the fields, so ask for one you should not see and confirm it comes back null with an error, even inside an otherwise allowed query." },
+          { id: "g3", title: "Confirm a query depth or complexity limit exists", desc: "A deeply nested query can take a service down. A safe server rejects an abusive query before it runs." },
+          { id: "g4", title: "Confirm introspection is disabled in production if it should be", desc: "Introspection hands out a full map of your schema. Fine in development, often meant to be off in production." }
+        ]
+      }
+    ];
+
+    const STORAGE_KEY = 'api_checklist_full_state';
+    let totalChecks = 0;
+    
+    // Count total checks
+    checklistData.forEach(cat => totalChecks += cat.items.length);
+
+    function getSavedState() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    }
+
+    function toggleCheck(id) {
+      const state = getSavedState();
+      state[id] = !state[id];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      render();
+    }
+
+    function resetChecklist() {
+      if(confirm("Are you sure you want to clear all progress?")) {
+        localStorage.removeItem(STORAGE_KEY);
+        render();
+      }
+    }
+
+    function exportJSON() {
+      const state = getSavedState();
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `api-checklist-export-${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function render() {
+      const state = getSavedState();
+      let checkedCount = 0;
+      
+      const container = document.getElementById('checklist-container');
+      const navContainer = document.getElementById('nav-links-container');
+      
+      container.innerHTML = '';
+      navContainer.innerHTML = '';
+
+      checklistData.forEach(category => {
+        let catChecked = 0;
+        
+        // Build items HTML
+        const itemsHtml = category.items.map(item => {
+          const isChecked = !!state[item.id];
+          if (isChecked) { checkedCount++; catChecked++; }
+          
+          return `
+            <div class="check-item ${isChecked ? 'checked' : ''}">
+              <input type="checkbox" id="${item.id}" ${isChecked ? 'checked' : ''} onchange="toggleCheck('${item.id}')">
+              <div class="check-content">
+                <label for="${item.id}">${item.title}</label>
+                <p>${item.desc}</p>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Inject category into main view
+        container.innerHTML += `
+          <div class="category-section" id="cat-${category.id}">
+            <h3 class="category-title">## ${category.title} (${catChecked}/${category.items.length} checked)</h3>
+            ${itemsHtml}
+          </div>
+        `;
+
+        // Inject nav link
+        navContainer.innerHTML += `
+          <li>
+            <a href="#cat-${category.id}">
+              ${category.title} <span class="nav-count">${catChecked}/${category.items.length}</span>
+            </a>
+          </li>
+        `;
+      });
+
+      // Update Header Progress
+      const percent = Math.round((checkedCount / totalChecks) * 100) || 0;
+      document.getElementById('progress-percent').innerText = `${percent}% COMPLETE`;
+      document.getElementById('progress-fill').style.width = `${percent}%`;
+      document.getElementById('progress-text').innerText = `${checkedCount} checked • ${totalChecks - checkedCount} remaining • ${totalChecks} total checks`;
+    }
+
+    // Initialize
+    render();
+  </script>
+</body>
+</html>

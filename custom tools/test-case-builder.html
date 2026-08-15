@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Test Case Builder & AI Assistant</title>
+  <style>
+    /* Dark Theme Variables & Base Styles */
+    :root {
+      --bg-color: #0f1115;
+      --sidebar-bg: #161920;
+      --card-bg: #1e222b;
+      --card-border: #2c313d;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #2dd4bf;
+      --accent-hover: #14b8a6;
+      --ai-accent: #3b82f6;
+      --danger: #ef4444;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Layout */
+    .sidebar {
+      width: 320px;
+      background-color: var(--sidebar-bg);
+      border-right: 1px solid var(--card-border);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .header {
+      padding: 2rem 3rem;
+      border-bottom: 1px solid var(--card-border);
+      background-color: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .builder-container {
+      flex: 1;
+      padding: 2rem 3rem 6rem 3rem;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
+    /* Controls & Buttons */
+    .controls { display: flex; flex-direction: column; gap: 0.5rem; }
+    button {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    button:hover { background: rgba(45, 212, 191, 0.1); }
+    button.danger { border-color: var(--danger); color: var(--danger); }
+    button.danger:hover { background: rgba(239, 68, 68, 0.1); }
+    button.ai-btn { border-color: var(--ai-accent); color: var(--ai-accent); }
+    button.ai-btn:hover { background: rgba(59, 130, 246, 0.1); }
+
+    /* Form Styles */
+    .form-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+    .form-section.ai-box {
+      border-color: rgba(59, 130, 246, 0.5);
+      background: linear-gradient(180deg, rgba(30, 34, 43, 1) 0%, rgba(15, 23, 42, 0.5) 100%);
+    }
+
+    .form-section h3 { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
+    .ai-box h3 { color: var(--ai-accent); }
+    
+    .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+    
+    label { font-size: 0.9rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem; }
+    label span { color: var(--text-muted); font-size: 0.75rem; font-weight: normal; margin-left: 0.5rem; }
+    p.ai-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.5; }
+    
+    input, textarea, select {
+      background: var(--bg-color);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 80px; }
+    textarea.ai-input { min-height: 120px; font-family: monospace; font-size: 0.85rem; }
+    
+    /* Previews */
+    .preview-section { margin-top: 2rem; border-top: 2px dashed var(--card-border); padding-top: 2rem; }
+    .preview-tabs { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .tab { cursor: pointer; color: var(--text-muted); font-weight: 600; padding-bottom: 0.5rem; border-bottom: 2px solid transparent; }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    
+    pre {
+      background: var(--bg-color);
+      border: 1px solid var(--card-border);
+      padding: 1.5rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      color: var(--text-muted);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    /* Six Characteristics Checklist in Sidebar */
+    .check-title { margin-top: 1rem; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+    }
+    .check-item.checked { border-color: var(--accent); opacity: 0.8; }
+    .check-item input { appearance: none; width: 18px; height: 18px; border: 2px solid var(--text-muted); border-radius: 4px; background: transparent; cursor: pointer; position: relative; flex-shrink: 0; padding: 0; margin: 0;}
+    .check-item input:checked { background: var(--accent); border-color: var(--accent); }
+    .check-item input:checked::after { content: '✓'; position: absolute; color: var(--bg-color); font-weight: bold; font-size: 12px; top: -1px; left: 2px; }
+    .check-item div { font-size: 0.85rem; }
+    .check-item strong { display: block; color: var(--text-main); margin-bottom: 0.2rem; }
+
+    /* Signature */
+    .signature {
+      position: absolute;
+      bottom: 2rem;
+      right: 3rem;
+      font-family: 'Brush Script MT', 'Lucida Handwriting', cursive;
+      font-size: 2.5rem;
+      color: rgba(255, 255, 255, 0.3);
+      pointer-events: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="controls">
+      <button onclick="copyToClipboard('markdown')">⎘ Copy Markdown</button>
+      <button onclick="copyToClipboard('gherkin')">⎘ Copy Gherkin</button>
+      <button class="danger" onclick="resetForm()">↺ Reset Builder</button>
+    </div>
+    
+    <div class="six-characteristics">
+      <h4 class="check-title">Scoring (The 6 Characteristics)</h4>
+      <div id="characteristics-container">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="header">
+      <h2>TEST CASE BUILDER</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Fill out the fields to automatically generate Markdown and Gherkin.</p>
+    </div>
+
+    <div class="builder-container">
+      <form id="tc-form">
+        
+        <div class="form-section">
+          <h3>1 · Identify</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="tc-id">Test case id <span>(for traceability)</span></label>
+              <input type="text" id="tc-id" placeholder="e.g. TC-030">
+            </div>
+            <div class="form-group">
+              <label for="tc-priority">Priority <span>(risk-based)</span></label>
+              <select id="tc-priority">
+                <option value="P1: Critical">P1: Critical (must run)</option>
+                <option value="P2: High">P2: High</option>
+                <option value="P3: Medium" selected>P3: Medium</option>
+                <option value="P4: Low">P4: Low</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="tc-title">Title <span>(the one behaviour this case verifies)</span></label>
+            <input type="text" id="tc-title" placeholder="Menu search returns only matching dishes">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="tc-type">Type</label>
+              <select id="tc-type">
+                <option value="Positive" selected>Positive</option>
+                <option value="Negative">Negative</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="tc-status">Status</label>
+              <select id="tc-status">
+                <option value="Draft" selected>Draft</option>
+                <option value="Ready to run">Ready to run</option>
+                <option value="In progress">In progress</option>
+                <option value="Blocked">Blocked</option>
+                <option value="Passed">Passed</option>
+                <option value="Failed">Failed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>2 · Set the Stage</h3>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="tc-preconditions">Preconditions <span>(the known state before step 1)</span></label>
+            <textarea id="tc-preconditions" placeholder="The Nyam Box menu has at least one dish named 'Ackee Bowl'"></textarea>
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="tc-data">Test data <span>(exact values, one per line)</span></label>
+            <textarea id="tc-data" placeholder="Search term: Ackee"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="tc-platform">Platform / environment</label>
+            <input type="text" id="tc-platform" placeholder="Web · Chrome 126">
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>3 · The Case</h3>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="tc-steps">Steps <span>(one action per line)</span></label>
+            <textarea id="tc-steps" placeholder="Open the menu&#10;Type 'Ackee' into search&#10;Submit search"></textarea>
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="tc-expected">Expected result <span>(one unambiguous outcome)</span></label>
+            <textarea id="tc-expected" placeholder="Only dishes containing 'Ackee' are listed"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="tc-trace">Traceability <span>(the requirement or AC this proves)</span></label>
+            <input type="text" id="tc-trace" placeholder="NYAM-17 / AC-2">
+          </div>
+        </div>
+
+        <!-- NEW AI INTEGRATION SECTION -->
+        <div class="form-section ai-box">
+          <h3>4 · Draft the rest with AI</h3>
+          <p class="ai-desc">You wrote one. Let AI draft the variations (negative paths, boundaries, equivalence sets), then you judge them. Click the button to copy the prompt tailored to your current case.</p>
+          
+          <button type="button" class="ai-btn" onclick="generateAIPrompt()" style="width: fit-content; margin-bottom: 1.5rem;">⎘ Copy AI Prompt</button>
+
+          <div class="form-group">
+            <label for="ai-import">Paste a case the AI wrote back here to score it:</label>
+            <textarea id="ai-import" class="ai-input" placeholder="Paste the ## TC-XXX... Markdown block the AI returned"></textarea>
+            <button type="button" onclick="loadFromAI()" style="width: fit-content; margin-top: 0.75rem;">→ Load into the builder</button>
+          </div>
+        </div>
+
+      </form>
+
+      <!-- Live Preview -->
+      <div class="preview-section">
+        <div class="preview-tabs">
+          <div class="tab active" onclick="switchTab('markdown')" id="tab-markdown">Live Preview (Markdown)</div>
+          <div class="tab" onclick="switchTab('gherkin')" id="tab-gherkin">Live Preview (Gherkin)</div>
+        </div>
+        <pre id="preview-box">Loading preview...</pre>
+      </div>
+
+    </div>
+    
+    <div class="signature">Matthew Wright-Oliver</div>
+  </main>
+
+  <script>
+    // State keys
+    const FORM_KEY = 'tc_builder_form_state';
+    const CHECKS_KEY = 'tc_builder_checks_state';
+
+    // The Six Characteristics Checklist Data
+    const characteristics = [
+      { id: "c_acc", title: "Accurate", desc: "A specific title and checkable result." },
+      { id: "c_rep", title: "Repeatable", desc: "Known state and clear steps." },
+      { id: "c_tra", title: "Traceable", desc: "Has an ID and linked requirement." },
+      { id: "c_reu", title: "Reusable", desc: "Names test data and platform." },
+      { id: "c_ato", title: "Atomic", desc: "Tests one behaviour with one result." },
+      { id: "c_eco", title: "Economical", desc: "No wasted steps." }
+    ];
+
+    const formElements = ['tc-id', 'tc-priority', 'tc-title', 'tc-type', 'tc-status', 'tc-preconditions', 'tc-data', 'tc-platform', 'tc-steps', 'tc-expected', 'tc-trace'];
+    let currentPreviewTab = 'markdown';
+
+    function init() {
+      renderChecklist();
+      loadFormState();
+      attachListeners();
+      updatePreview();
+    }
+
+    function renderChecklist() {
+      const savedChecks = JSON.parse(localStorage.getItem(CHECKS_KEY) || '{}');
+      const container = document.getElementById('characteristics-container');
+      container.innerHTML = characteristics.map(c => `
+        <label class="check-item ${savedChecks[c.id] ? 'checked' : ''}">
+          <input type="checkbox" id="${c.id}" ${savedChecks[c.id] ? 'checked' : ''} onchange="toggleCheck('${c.id}')">
+          <div>
+            <strong>${c.title}</strong>
+            ${c.desc}
+          </div>
+        </label>
+      `).join('');
+    }
+
+    function toggleCheck(id) {
+      const savedChecks = JSON.parse(localStorage.getItem(CHECKS_KEY) || '{}');
+      savedChecks[id] = !savedChecks[id];
+      localStorage.setItem(CHECKS_KEY, JSON.stringify(savedChecks));
+      renderChecklist();
+    }
+
+    function attachListeners() {
+      formElements.forEach(id => {
+        document.getElementById(id).addEventListener('input', saveAndPreview);
+      });
+    }
+
+    function saveAndPreview() {
+      const state = {};
+      formElements.forEach(id => {
+        state[id] = document.getElementById(id).value;
+      });
+      localStorage.setItem(FORM_KEY, JSON.stringify(state));
+      updatePreview();
+    }
+
+    function loadFormState() {
+      const state = JSON.parse(localStorage.getItem(FORM_KEY) || '{}');
+      formElements.forEach(id => {
+        if (state[id]) {
+          document.getElementById(id).value = state[id];
+        }
+      });
+    }
+
+    function resetForm() {
+      if(confirm("Clear the form and checklist?")) {
+        localStorage.removeItem(FORM_KEY);
+        localStorage.removeItem(CHECKS_KEY);
+        formElements.forEach(id => document.getElementById(id).value = '');
+        init();
+      }
+    }
+
+    function switchTab(tab) {
+      currentPreviewTab = tab;
+      document.getElementById('tab-markdown').classList.remove('active');
+      document.getElementById('tab-gherkin').classList.remove('active');
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      updatePreview();
+    }
+
+    // Generator Functions
+    function getVals() {
+      const v = {};
+      formElements.forEach(id => v[id] = document.getElementById(id).value || `[${id.replace('tc-','')}]`);
+      return v;
+    }
+
+    function generateMarkdown() {
+      const v = getVals();
+      // Format steps into numbered list
+      const stepsList = v['tc-steps'].split('\n').map((s, i) => `${i+1}. ${s}`).join('<br>');
+      
+      return `${v['tc-id']} ${v['tc-type']}
+## ${v['tc-title']}
+**Priority:** ${v['tc-priority']}  ·  **Status:** ${v['tc-status']}  ·  **Platform:** ${v['tc-platform']}
+**Traceability:** ${v['tc-trace']}
+
+| Field | Detail |
+| --- | --- |
+| **Preconditions** | ${v['tc-preconditions'].replace(/\n/g, '<br>')} |
+| **Test data** | ${v['tc-data'].replace(/\n/g, '<br>')} |
+| **Steps** | ${stepsList} |
+| **Expected result** | ${v['tc-expected']} |`;
+    }
+
+    function generateGherkin() {
+      const v = getVals();
+      const stepsArray = v['tc-steps'].split('\n');
+      let stepsGherkin = '';
+      if(stepsArray.length > 0) {
+        stepsGherkin += `    When ${stepsArray[0]}\n`;
+        for(let i=1; i<stepsArray.length; i++) {
+          if(stepsArray[i].trim() !== '') stepsGherkin += `    And ${stepsArray[i]}\n`;
+        }
+      }
+
+      return `Feature: ${v['tc-title']}
+  # Traceability: ${v['tc-trace']}
+  
+  @${v['tc-id']} @${v['tc-type'].toLowerCase()} @${v['tc-priority'].split(':')[0]}
+  Scenario: ${v['tc-title']}
+    # Test Data:
+    # ${v['tc-data'].replace(/\n/g, '\n    # ')}
+    # Platform: ${v['tc-platform']}
+    
+    Given ${v['tc-preconditions']}
+${stepsGherkin}    Then ${v['tc-expected']}`;
+    }
+
+    function updatePreview() {
+      const box = document.getElementById('preview-box');
+      box.innerText = currentPreviewTab === 'markdown' ? generateMarkdown() : generateGherkin();
+    }
+
+    function copyToClipboard(format) {
+      const text = format === 'markdown' ? generateMarkdown() : generateGherkin();
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`${format.toUpperCase()} copied to clipboard!`);
+      });
+    }
+
+    /* 
+     ===========================================
+     AI ASSISTANT LOGIC 
+     ===========================================
+    */
+
+    // 1. Generate the Prompt
+    function generateAIPrompt() {
+      const v = getVals();
+      
+      // Prevent AI from literally continuing from "[tc-id]" if the user hasn't set one yet
+      const nextId = v['tc-id'].startsWith('[id') ? 'TC-001' : v['tc-id'];
+
+      const aiPrompt = `You are helping me design test cases. Before you write anything, ask me for whatever you still need: the acceptance criteria, the user roles, the data boundaries, and what the feature must NOT do. Do not assume or invent requirements to fill gaps.
+
+Feature or behaviour under test: ${v['tc-title']}
+Preconditions: ${v['tc-preconditions']}
+Platform: ${v['tc-platform']}
+It traces to: ${v['tc-trace']}
+
+Once you have what you need, design a set of test cases that covers:
+- the positive (happy) path,
+- the negative cases: invalid input, wrong order, missing data, and the things a user should not be able to do,
+- boundary values and equivalence partitions for every input that has a range or a set of valid values.
+
+Every case must be:
+- accurate: a specific title and one concrete, checkable expected result, never "it works",
+- atomic: one behaviour per case,
+- repeatable: a known starting state and exact test data,
+- traceable: an id, and the requirement it proves,
+- economical: no wasted steps,
+- reusable: named test data and platform.
+
+Return every case in this exact format so I can paste it straight into my builder, continuing ids from ${nextId}:
+
+## TC-XXX · <title>
+**Priority:** P1-P4  ·  **Type:** Positive or Negative  ·  **Status:** Ready to run
+**Platform:** <platform>
+**Traceability:** <requirement>
+
+| Field | Detail |
+| --- | --- |
+| Preconditions | ... |
+| Test data | ... |
+| Steps | 1. ...<br>2. ... |
+| Expected result | ... |
+
+Then give the same case in Gherkin: a Feature line, a tagged Scenario, and Given / When / Then, with the test data in # comments.
+
+Flag any case you are unsure about and tell me what you assumed. I will review, correct, and own the final set.`;
+
+      navigator.clipboard.writeText(aiPrompt).then(() => {
+        alert("AI Prompt copied to clipboard! Paste it into Claude, ChatGPT, or Cursor.");
+      });
+    }
+
+    // Helper to safely select an option if the text matches
+    function setSelectByText(id, matchText) {
+      if(!matchText) return;
+      const select = document.getElementById(id);
+      const lowerMatch = matchText.toLowerCase();
+      for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].text.toLowerCase().includes(lowerMatch) || 
+            select.options[i].value.toLowerCase().includes(lowerMatch)) {
+          select.selectedIndex = i;
+          break;
+        }
+      }
+    }
+
+    // 2. Parse the imported Markdown
+    function loadFromAI() {
+      const text = document.getElementById('ai-import').value;
+      if (!text.trim()) {
+        alert("Please paste a Markdown test case first.");
+        return;
+      }
+
+      // 1. ID & Title: "## TC-031 · Search handles typos"
+      const titleMatch = text.match(/##\s+([\w\d-]+)\s+·\s+(.*)/);
+      if (titleMatch) {
+        document.getElementById('tc-id').value = titleMatch[1].trim();
+        document.getElementById('tc-title').value = titleMatch[2].trim();
+      }
+
+      // 2. Meta: "**Priority:** P2: High  ·  **Type:** Negative  ·  **Status:** Ready to run"
+      const metaMatch = text.match(/\*\*Priority:\*\*\s*(.*?)\s*·\s*\*\*Type:\*\*\s*(.*?)\s*·\s*\*\*Status:\*\*\s*(.*)/);
+      if (metaMatch) {
+        setSelectByText('tc-priority', metaMatch[1].trim());
+        setSelectByText('tc-type', metaMatch[2].trim());
+        setSelectByText('tc-status', metaMatch[3].trim());
+      }
+
+      // 3. Platform & Trace
+      const platformMatch = text.match(/\*\*Platform:\*\*\s*(.*)/);
+      if (platformMatch) document.getElementById('tc-platform').value = platformMatch[1].trim();
+
+      const traceMatch = text.match(/\*\*Traceability:\*\*\s*(.*)/);
+      if (traceMatch) document.getElementById('tc-trace').value = traceMatch[1].trim();
+
+      // 4. Table contents
+      // Removes markdown <br> tags, converts them to newlines for textareas
+      const extractTableData = (fieldName) => {
+        const regex = new RegExp(`\\|\\s*\\*?\\*?${fieldName}\\*?\\*?\\s*\\|\\s*(.*?)\\s*\\|`, 'i');
+        const match = text.match(regex);
+        if (match) {
+          // Replace both literal "<br>" and "\n" formatting inside tables
+          return match[1].replace(/<br\s*\/?>/gi, '\n').replace(/\\n/g, '\n').trim();
+        }
+        return "";
+      };
+
+      document.getElementById('tc-preconditions').value = extractTableData("Preconditions");
+      document.getElementById('tc-data').value = extractTableData("Test data");
+      document.getElementById('tc-expected').value = extractTableData("Expected result");
+
+      // Steps need special cleanup to remove "1. ", "2. " from the textarea view
+      const rawSteps = extractTableData("Steps");
+      if (rawSteps) {
+        // Remove numbered prefixes (e.g., "1. ")
+        const cleanSteps = rawSteps.split('\n')
+          .map(step => step.replace(/^\d+\.\s*/, '').trim())
+          .join('\n');
+        document.getElementById('tc-steps').value = cleanSteps;
+      }
+
+      // Wipe the import box and update preview
+      document.getElementById('ai-import').value = '';
+      saveAndPreview();
+      
+      // Uncheck all characteristics so user forces a re-review
+      localStorage.removeItem(CHECKS_KEY);
+      renderChecklist();
+      
+      alert("Test case loaded! Don't forget to review it against the 6 Characteristics.");
+    }
+
+    // Run on load
+    init();
+  </script>
+</body>
+</html>

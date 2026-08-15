@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Bug Report Builder & AI Assistant</title>
+  <style>
+    /* Dark Theme Variables & Base Styles */
+    :root {
+      --bg-color: #0f1115;
+      --sidebar-bg: #161920;
+      --card-bg: #1e222b;
+      --card-border: #2c313d;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #2dd4bf;
+      --accent-hover: #14b8a6;
+      --ai-accent: #3b82f6;
+      --danger: #ef4444;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Layout */
+    .sidebar {
+      width: 320px;
+      background-color: var(--sidebar-bg);
+      border-right: 1px solid var(--card-border);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .header {
+      padding: 2rem 3rem;
+      border-bottom: 1px solid var(--card-border);
+      background-color: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .builder-container {
+      flex: 1;
+      padding: 2rem 3rem 6rem 3rem;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
+    /* Controls & Buttons */
+    .controls { display: flex; flex-direction: column; gap: 0.5rem; }
+    button {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    button:hover { background: rgba(45, 212, 191, 0.1); }
+    button.danger { border-color: var(--danger); color: var(--danger); }
+    button.danger:hover { background: rgba(239, 68, 68, 0.1); }
+    button.ai-btn { border-color: var(--ai-accent); color: var(--ai-accent); }
+    button.ai-btn:hover { background: rgba(59, 130, 246, 0.1); }
+
+    /* Form Styles */
+    .form-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+    .form-section.ai-box {
+      border-color: rgba(59, 130, 246, 0.5);
+      background: linear-gradient(180deg, rgba(30, 34, 43, 1) 0%, rgba(15, 23, 42, 0.5) 100%);
+    }
+
+    .form-section h3 { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
+    .ai-box h3 { color: var(--ai-accent); }
+    
+    .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+    
+    label { font-size: 0.9rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem; }
+    label span { color: var(--text-muted); font-size: 0.75rem; font-weight: normal; margin-left: 0.5rem; }
+    p.ai-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.5; }
+    
+    input, textarea, select {
+      background: var(--bg-color);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 80px; }
+    textarea.ai-input { min-height: 120px; font-family: monospace; font-size: 0.85rem; }
+    
+    /* Previews */
+    .preview-section { margin-top: 2rem; border-top: 2px dashed var(--card-border); padding-top: 2rem; }
+    .preview-tabs { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .tab { cursor: pointer; color: var(--text-muted); font-weight: 600; padding-bottom: 0.5rem; border-bottom: 2px solid transparent; }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    
+    pre {
+      background: var(--bg-color);
+      border: 1px solid var(--card-border);
+      padding: 1.5rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      color: var(--text-muted);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    /* Checklist in Sidebar */
+    .check-title { margin-top: 1rem; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+    }
+    .check-item.checked { border-color: var(--accent); opacity: 0.8; }
+    .check-item input { appearance: none; width: 18px; height: 18px; border: 2px solid var(--text-muted); border-radius: 4px; background: transparent; cursor: pointer; position: relative; flex-shrink: 0; padding: 0; margin: 0;}
+    .check-item input:checked { background: var(--accent); border-color: var(--accent); }
+    .check-item input:checked::after { content: '✓'; position: absolute; color: var(--bg-color); font-weight: bold; font-size: 12px; top: -1px; left: 2px; }
+    .check-item div { font-size: 0.85rem; }
+    .check-item strong { display: block; color: var(--text-main); margin-bottom: 0.2rem; }
+
+    /* Signature */
+    .signature {
+      position: absolute;
+      bottom: 2rem;
+      right: 3rem;
+      font-family: 'Brush Script MT', 'Lucida Handwriting', cursive;
+      font-size: 2.5rem;
+      color: rgba(255, 255, 255, 0.3);
+      pointer-events: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="controls">
+      <button onclick="copyToClipboard('markdown')">⎘ Copy Markdown</button>
+      <button onclick="copyToClipboard('jira')">⎘ Copy Jira Format</button>
+      <button class="danger" onclick="resetForm()">↺ Reset Builder</button>
+    </div>
+    
+    <div class="six-characteristics">
+      <h4 class="check-title">Bug Quality Checklist</h4>
+      <div id="characteristics-container">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="header">
+      <h2>BUG REPORT BUILDER</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Fill out the fields to automatically generate clear, reproducible bug reports.</p>
+    </div>
+
+    <div class="builder-container">
+      <form id="bug-form">
+        
+        <div class="form-section">
+          <h3>1 · Identify</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bug-id">Bug ID <span>(for tracking)</span></label>
+              <input type="text" id="bug-id" placeholder="e.g. BUG-001">
+            </div>
+            <div class="form-group" style="flex: 2;">
+              <label for="bug-title">Title <span>(what breaks, where, under what condition)</span></label>
+              <input type="text" id="bug-title" placeholder="IRIE20 discount does not apply when cart total is exactly 10,000 JMD">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bug-severity">Severity <span>(impact)</span></label>
+              <select id="bug-severity">
+                <option value="Blocker">Blocker</option>
+                <option value="Critical">Critical</option>
+                <option value="Major" selected>Major</option>
+                <option value="Minor">Minor</option>
+                <option value="Trivial">Trivial</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="bug-priority">Priority <span>(urgency)</span></label>
+              <select id="bug-priority">
+                <option value="P1: Urgent">P1: Urgent</option>
+                <option value="P2: High" selected>P2: High</option>
+                <option value="P3: Medium">P3: Medium</option>
+                <option value="P4: Low">P4: Low</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bug-reproducibility">Reproducibility <span>(how often?)</span></label>
+              <input type="text" id="bug-reproducibility" placeholder="Always (100%)">
+            </div>
+            <div class="form-group">
+              <label for="bug-component">Component / Area <span>(optional)</span></label>
+              <input type="text" id="bug-component" placeholder="cart">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>2 · Reproduce</h3>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="bug-env">Environment</label>
+            <input type="text" id="bug-env" placeholder="Web.Chrome">
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="bug-preconditions">Preconditions <span>(the state before step 1)</span></label>
+            <textarea id="bug-preconditions" placeholder="Logged in as a standard user with an existing cart totaling 10,000 JMD"></textarea>
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="bug-steps">Steps to reproduce <span>(one action per line)</span></label>
+            <textarea id="bug-steps" placeholder="Enter IRIE20 in discount code field&#10;Click Apply"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bug-expected">Expected result</label>
+              <textarea id="bug-expected" placeholder="Discount should show a 2,000 JMD discount"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="bug-actual">Actual result <span>(include exact errors)</span></label>
+              <textarea id="bug-actual" placeholder="Discount shows 0 JMD"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>3 · Evidence & Impact</h3>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="bug-evidence">Evidence <span>(screenshots, recording, logs, request IDs)</span></label>
+            <input type="text" id="bug-evidence" placeholder="![Cart total calculation bug](../evidence/irie20-cart-error.png)">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bug-regression">Regression <span>(did it work before?)</span></label>
+              <input type="text" id="bug-regression" placeholder="New issue / new feature">
+            </div>
+            <div class="form-group">
+              <label for="bug-workaround">Workaround <span>(optional)</span></label>
+              <input type="text" id="bug-workaround" placeholder="Works at 10,001+ JMD">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="bug-impact">User impact <span>(who is affected, how many)</span></label>
+            <input type="text" id="bug-impact" placeholder="Affects all users with cart equaling exactly 10,000 JMD">
+          </div>
+          <div class="form-group">
+            <label for="bug-summary">Summary</label>
+            <textarea id="bug-summary" placeholder="This bug report details an issue where..."></textarea>
+          </div>
+        </div>
+
+        <!-- AI INTEGRATION SECTION -->
+        <div class="form-section ai-box">
+          <h3>4 · AI Bug Assistant</h3>
+          
+          <div class="form-group" style="margin-bottom: 1.5rem; border-bottom: 1px dashed var(--card-border); padding-bottom: 1.5rem;">
+            <label for="ai-explain" style="color: var(--ai-accent);">Option A: Explain it and let AI draft the report</label>
+            <p class="ai-desc">Brain-dump what happened in plain English. AI will extrapolate the fields perfectly.</p>
+            <textarea id="ai-explain" class="ai-input" placeholder="e.g. The IRIE20 discount code isn't working if my cart is exactly 10k JMD. It just gives 0 discount instead of the 2k it's supposed to. It works fine if it's over 10k though."></textarea>
+            <button type="button" class="ai-btn" onclick="generateDraftPrompt()" style="width: fit-content; margin-top: 0.75rem;">⎘ Copy Prompt to Draft Bug</button>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem; border-bottom: 1px dashed var(--card-border); padding-bottom: 1.5rem;">
+            <label style="color: var(--ai-accent);">Option B: Refine the current form</label>
+            <p class="ai-desc">Already filled out the fields above? Let AI polish your wording and format it to your template.</p>
+            <button type="button" class="ai-btn" onclick="generateRefinePrompt()" style="width: fit-content;">⎘ Copy Prompt to Refine Form</button>
+          </div>
+
+          <div class="form-group">
+            <label for="ai-import">Paste the AI's response back here to load it:</label>
+            <textarea id="ai-import" class="ai-input" placeholder="Paste the Markdown bug report returned by the AI"></textarea>
+            <button type="button" onclick="loadFromAI()" style="width: fit-content; margin-top: 0.75rem;">→ Load into the builder</button>
+          </div>
+        </div>
+
+      </form>
+
+      <!-- Live Preview -->
+      <div class="preview-section">
+        <div class="preview-tabs">
+          <div class="tab active" onclick="switchTab('markdown')" id="tab-markdown">Live Preview (Markdown)</div>
+          <div class="tab" onclick="switchTab('jira')" id="tab-jira">Live Preview (Jira Markup)</div>
+        </div>
+        <pre id="preview-box">Loading preview...</pre>
+      </div>
+
+    </div>
+    
+    <div class="signature">Matthew Wright-Oliver</div>
+  </main>
+
+  <script>
+    // State keys
+    const FORM_KEY = 'bug_builder_form_state';
+    const CHECKS_KEY = 'bug_builder_checks_state';
+
+    // Bug Quality Checklist Data
+    const characteristics = [
+      { id: "b_rep", title: "Reproducible", desc: "Steps consistently trigger the failure." },
+      { id: "b_spe", title: "Specific", desc: "Clear actual vs. expected results." },
+      { id: "b_con", title: "Concise", desc: "No extraneous information in steps." },
+      { id: "b_env", title: "Environment-Aware", desc: "OS, browser, or app build version noted." },
+      { id: "b_evi", title: "Evidenced", desc: "Logs, screenshots, or videos included." },
+      { id: "b_uni", title: "Unambiguous", desc: "Single issue per report, no bundled bugs." }
+    ];
+
+    // Added all fields
+    const formElements = [
+      'bug-id', 'bug-title', 'bug-severity', 'bug-priority', 'bug-reproducibility', 'bug-component',
+      'bug-env', 'bug-preconditions', 'bug-steps', 'bug-expected', 'bug-actual',
+      'bug-evidence', 'bug-regression', 'bug-workaround', 'bug-impact', 'bug-summary', 'ai-explain'
+    ];
+    let currentPreviewTab = 'markdown';
+
+    function init() {
+      renderChecklist();
+      loadFormState();
+      attachListeners();
+      updatePreview();
+    }
+
+    function renderChecklist() {
+      const savedChecks = JSON.parse(localStorage.getItem(CHECKS_KEY) || '{}');
+      const container = document.getElementById('characteristics-container');
+      container.innerHTML = characteristics.map(c => `
+        <label class="check-item ${savedChecks[c.id] ? 'checked' : ''}">
+          <input type="checkbox" id="${c.id}" ${savedChecks[c.id] ? 'checked' : ''} onchange="toggleCheck('${c.id}')">
+          <div>
+            <strong>${c.title}</strong>
+            ${c.desc}
+          </div>
+        </label>
+      `).join('');
+    }
+
+    function toggleCheck(id) {
+      const savedChecks = JSON.parse(localStorage.getItem(CHECKS_KEY) || '{}');
+      savedChecks[id] = !savedChecks[id];
+      localStorage.setItem(CHECKS_KEY, JSON.stringify(savedChecks));
+      renderChecklist();
+    }
+
+    function attachListeners() {
+      formElements.forEach(id => {
+        document.getElementById(id).addEventListener('input', saveAndPreview);
+      });
+    }
+
+    function saveAndPreview() {
+      const state = {};
+      formElements.forEach(id => {
+        state[id] = document.getElementById(id).value;
+      });
+      localStorage.setItem(FORM_KEY, JSON.stringify(state));
+      updatePreview();
+    }
+
+    function loadFormState() {
+      const state = JSON.parse(localStorage.getItem(FORM_KEY) || '{}');
+      formElements.forEach(id => {
+        if (state[id]) {
+          document.getElementById(id).value = state[id];
+        }
+      });
+    }
+
+    function resetForm() {
+      if(confirm("Clear the form and checklist?")) {
+        localStorage.removeItem(FORM_KEY);
+        localStorage.removeItem(CHECKS_KEY);
+        formElements.forEach(id => document.getElementById(id).value = '');
+        init();
+      }
+    }
+
+    function switchTab(tab) {
+      currentPreviewTab = tab;
+      document.getElementById('tab-markdown').classList.remove('active');
+      document.getElementById('tab-jira').classList.remove('active');
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      updatePreview();
+    }
+
+    // Generator Functions
+    function getVals() {
+      const v = {};
+      formElements.forEach(id => v[id] = document.getElementById(id).value || `[${id.replace('bug-','')}]`);
+      return v;
+    }
+
+    function generateMarkdown() {
+      const v = getVals();
+      // Use standard markdown numbering for the new template format
+      const stepsList = v['bug-steps'].split('\n').map((s, i) => `${i+1}. ${s}`).join('\n');
+      
+      return `# ${v['bug-id']} · Bug Report
+
+## ${v['bug-title']}
+
+**Severity:** ${v['bug-severity']}  ·  **Priority:** ${v['bug-priority']}
+**Reproducibility:** ${v['bug-reproducibility']}
+**Component:** ${v['bug-component']}
+**Environment:** ${v['bug-env']}
+
+### Preconditions
+${v['bug-preconditions']}
+
+### Steps to reproduce
+${stepsList}
+
+### Expected result
+${v['bug-expected']}
+
+### Actual result
+${v['bug-actual']}
+
+### Evidence
+${v['bug-evidence']}
+
+### Regression
+${v['bug-regression']}
+
+### Workaround
+${v['bug-workaround']}
+
+### User impact
+${v['bug-impact']}
+
+---
+
+## Summary
+${v['bug-summary']}`;
+    }
+
+    function generateJira() {
+      const v = getVals();
+      const stepsList = v['bug-steps'].split('\n').map((s, i) => `# ${s}`).join('\n');
+
+      return `h1. ${v['bug-id']} - Bug Report
+h2. ${v['bug-title']}
+
+*Severity:* ${v['bug-severity']} | *Priority:* ${v['bug-priority']}
+*Reproducibility:* ${v['bug-reproducibility']}
+*Component:* ${v['bug-component']}
+*Environment:* ${v['bug-env']}
+
+h3. Preconditions
+${v['bug-preconditions']}
+
+h3. Steps to reproduce
+${stepsList}
+
+h3. Expected result
+{color:#2dd4bf}${v['bug-expected']}{color}
+
+h3. Actual result
+{color:#ef4444}${v['bug-actual']}{color}
+
+h3. Evidence
+${v['bug-evidence']}
+
+h3. Regression
+${v['bug-regression']}
+
+h3. Workaround
+${v['bug-workaround']}
+
+h3. User impact
+${v['bug-impact']}
+
+----
+h2. Summary
+${v['bug-summary']}`;
+    }
+
+    function updatePreview() {
+      const box = document.getElementById('preview-box');
+      box.innerText = currentPreviewTab === 'markdown' ? generateMarkdown() : generateJira();
+    }
+
+    function copyToClipboard(format) {
+      const text = format === 'markdown' ? generateMarkdown() : generateJira();
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`${format.toUpperCase()} copied to clipboard!`);
+      });
+    }
+
+    /* 
+     ===========================================
+     AI ASSISTANT LOGIC FOR BUG REPORTS
+     ===========================================
+    */
+
+    function getAiInstructionTemplate() {
+      return `Return the bug report in this EXACT Markdown format so I can paste it directly into my builder. Do not add any other text outside this block:
+
+# BUG-XXX · Bug Report
+
+## <A concise title>
+
+**Severity:** <Severity>  ·  **Priority:** <Priority>
+**Reproducibility:** <e.g., Always (100%)>
+**Component:** <Component Name>
+**Environment:** <Environment String>
+
+### Preconditions
+<Preconditions>
+
+### Steps to reproduce
+1. <Step 1>
+2. <Step 2>
+
+### Expected result
+<Expected>
+
+### Actual result
+<Actual>
+
+### Evidence
+<Evidence placeholder>
+
+### Regression
+<Regression context or N/A>
+
+### Workaround
+<Workaround or N/A>
+
+### User impact
+<Impact explanation>
+
+---
+
+## Summary
+<Short summary paragraph detailing the issue, expected outcome, and impact.>`;
+    }
+
+    function generateDraftPrompt() {
+      const explanation = document.getElementById('ai-explain').value;
+      if (!explanation.trim()) {
+        alert("Please explain the bug in the text area first!");
+        return;
+      }
+
+      const aiPrompt = `You are a Senior QA Engineer. I will explain a bug to you in plain English. I need you to translate my explanation into a professional, clear, and structured bug report.
+
+Here is my explanation:
+"${explanation}"
+
+Based on this, extrapolate the necessary preconditions, exact step-by-step reproduction sequence, the actual result, expected result, workaround, user impact, and a summary. Invent placeholders like <browser> or <url> if I didn't provide environment details. Determine a logical severity and priority.
+
+${getAiInstructionTemplate()}`;
+
+      navigator.clipboard.writeText(aiPrompt).then(() => {
+        alert("Draft Prompt copied to clipboard! Paste it into your AI assistant.");
+      });
+    }
+
+    function generateRefinePrompt() {
+      const v = getVals();
+      
+      const aiPrompt = `You are a Senior QA Engineer assisting me in refining a bug report. Review the rough details below and tighten the wording so it is completely unambiguous, professional, and easy for a developer to reproduce and fix immediately.
+
+Bug ID: ${v['bug-id']}
+Title: ${v['bug-title']}
+Severity: ${v['bug-severity']} | Priority: ${v['bug-priority']}
+Reproducibility: ${v['bug-reproducibility']}
+Component: ${v['bug-component']}
+Environment: ${v['bug-env']}
+Preconditions: ${v['bug-preconditions']}
+Steps:
+${v['bug-steps']}
+Actual Result: ${v['bug-actual']}
+Expected Result: ${v['bug-expected']}
+Evidence: ${v['bug-evidence']}
+Regression: ${v['bug-regression']}
+Workaround: ${v['bug-workaround']}
+User Impact: ${v['bug-impact']}
+Summary: ${v['bug-summary']}
+
+Please polish this bug report to ensure it is reproducible, specific, and concise. 
+
+${getAiInstructionTemplate()}`;
+
+      navigator.clipboard.writeText(aiPrompt).then(() => {
+        alert("Refine Prompt copied to clipboard! Paste it into your AI assistant.");
+      });
+    }
+
+    function setSelectByText(id, matchText) {
+      if(!matchText) return;
+      const select = document.getElementById(id);
+      const lowerMatch = matchText.toLowerCase();
+      for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].text.toLowerCase().includes(lowerMatch) || 
+            select.options[i].value.toLowerCase().includes(lowerMatch)) {
+          select.selectedIndex = i;
+          break;
+        }
+      }
+    }
+
+    function extractSection(text, headerRegex) {
+      const regex = new RegExp(`###\\s+${headerRegex}\\s*\\n([\\s\\S]*?)(?:###|---|$)`, 'i');
+      const match = text.match(regex);
+      return match ? match[1].trim() : "";
+    }
+
+    function loadFromAI() {
+      const text = document.getElementById('ai-import').value;
+      if (!text.trim()) {
+        alert("Please paste a Markdown bug report first.");
+        return;
+      }
+
+      // 1. ID & Main Heading
+      const idMatch = text.match(/#\s+([\w\d-]+)\s+·\s+Bug Report/i);
+      if (idMatch) document.getElementById('bug-id').value = idMatch[1].trim();
+
+      // 2. Title (H2)
+      const titleMatch = text.match(/##\s+(?!Summary)(.*)/i);
+      if (titleMatch) document.getElementById('bug-title').value = titleMatch[1].trim();
+
+      // 3. Meta Data Line Extracts
+      const sevPriMatch = text.match(/\*\*Severity:\*\*\s*(.*?)\s*·\s*\*\*Priority:\*\*\s*(.*)/i);
+      if (sevPriMatch) {
+        setSelectByText('bug-severity', sevPriMatch[1].trim());
+        setSelectByText('bug-priority', sevPriMatch[2].trim());
+      }
+      
+      const reproMatch = text.match(/\*\*Reproducibility:\*\*\s*(.*)/i);
+      if (reproMatch) document.getElementById('bug-reproducibility').value = reproMatch[1].trim();
+      
+      const compMatch = text.match(/\*\*Component:\*\*\s*(.*)/i);
+      if (compMatch) document.getElementById('bug-component').value = compMatch[1].trim();
+      
+      const envMatch = text.match(/\*\*Environment:\*\*\s*(.*)/i);
+      if (envMatch) document.getElementById('bug-env').value = envMatch[1].trim();
+
+      // 4. Content Sections
+      document.getElementById('bug-preconditions').value = extractSection(text, "Preconditions");
+      document.getElementById('bug-expected').value = extractSection(text, "Expected result");
+      document.getElementById('bug-actual').value = extractSection(text, "Actual result");
+      document.getElementById('bug-evidence').value = extractSection(text, "Evidence");
+      document.getElementById('bug-regression').value = extractSection(text, "Regression");
+      document.getElementById('bug-workaround').value = extractSection(text, "Workaround");
+      document.getElementById('bug-impact').value = extractSection(text, "User impact");
+
+      // Extract Summary explicitly
+      const sumMatch = text.match(/##\s+Summary\s*\n([\s\S]*?)$/i);
+      if (sumMatch) {
+        document.getElementById('bug-summary').value = sumMatch[1].trim();
+      }
+
+      // Clean steps numbering
+      const rawSteps = extractSection(text, "Steps to reproduce");
+      if (rawSteps) {
+        const cleanSteps = rawSteps.split('\n')
+          .map(step => step.replace(/^\d+\.\s*/, '').trim()) // Removes the "1. ", "2. " to populate text area correctly
+          .join('\n');
+        document.getElementById('bug-steps').value = cleanSteps;
+      }
+
+      // Reset import box and refresh
+      document.getElementById('ai-import').value = '';
+      saveAndPreview();
+      
+      localStorage.removeItem(CHECKS_KEY);
+      renderChecklist();
+      
+      alert("Bug report loaded! Review it against the Bug Quality Checklist.");
+    }
+
+    init();
+  </script>
+</body>
+</html>
