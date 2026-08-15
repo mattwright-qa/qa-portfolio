@@ -5,7 +5,7 @@ test-results/
 .env
 .env.*
 *.log
-./qa-fundamentals-workbook.md
+qa-fundamentals\qa-fundamentals-workbook.md
 ./scripts
 ./test-automation
 ./ai-in-qa
