@@ -1,7 +1,12 @@
 # Evidence guide
 
-<!-- Replace this note with a short index of screenshots, traces, reports, and what each one proves. Do not include private workplace information. -->
+
 
 ## Evidence item
 
-Describe the evidence and the decision it supports.
+- [Screenshot 1: IRIE20 discount not applied](./irie20-cart-error.png)
+  - Proves that the IRIE20 discount is not correctly applied when the cart total is exactly 10,000 JMD.
+
+- [Screenshot 2: Cart total calculation error](./updatetotal-cart-error.png)
+  - Proves that the cart total does not update after removing a dish, leading to confusion and potential overpayment for users.
+
