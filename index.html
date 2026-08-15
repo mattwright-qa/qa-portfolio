@@ -2,15 +2,159 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QA Custom Tools Hub</title>
+  <style>
+    :root {
+      --bg-color: #0f1115;
+      --card-bg: #1e222b;
+      --card-border: #2c313d;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #2dd4bf;
+      --accent-hover: #14b8a6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      max-width: 600px;
+      margin-bottom: 3rem;
+    }
+
+    header h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: #fff;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 10px 20px -10px rgba(45, 212, 191, 0.15);
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .card h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      line-height: 1.4;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-link {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .card:hover .card-link {
+      color: var(--accent-hover);
+    }
+  </style>
 </head>
-<body style="font-family: sans-serif; padding: 2rem;">
-  <h1>🛠️ QA Custom Tools</h1>
-  <ul>
-    <li><a href="custom tools/api-checklist.html">API Checklist</a></li>
-    <li><a href="custom tools/bug-report-builder.html">Bug Report Builder</a></li>
-    <li><a href="custom tools/test-case-builder.html">Test Case Builder</a></li>
-    <li><a href="custom tools/visual-qa-checklist.html">Visual QA Checklist</a></li>
-  </ul>
+<body>
+
+  <header>
+    <h1>🧪 QA Custom Tools Hub</h1>
+    <p>A central dashboard of custom browser-based tools designed to streamline manual testing, API validation, and test case creation.</p>
+  </header>
+
+  <main class="grid">
+    <a href="custom%20tools/api-checklist.html" class="card">
+      <div>
+        <div class="card-icon">⚡</div>
+        <h2>API Testing Checklist</h2>
+        <p>Interactive verification checklist for API endpoints, payload validation, and status codes.</p>
+      </div>
+      <span class="card-link">Launch Tool &rarr;</span>
+    </a>
+
+    <a href="custom%20tools/bug-report-builder.html" class="card">
+      <div>
+        <div class="card-icon">🐛</div>
+        <h2>Bug Report Builder</h2>
+        <p>Quickly format detailed, reproducible bug reports for Jira or GitHub Issues.</p>
+      </div>
+      <span class="card-link">Launch Tool &rarr;</span>
+    </a>
+
+    <a href="custom%20tools/test-case-builder.html" class="card">
+      <div>
+        <div class="card-icon">📝</div>
+        <h2>Test Case Builder</h2>
+        <p>Generate structured test cases in Markdown or Gherkin format on the fly.</p>
+      </div>
+      <span class="card-link">Launch Tool &rarr;</span>
+    </a>
+
+    <a href="custom%20tools/visual-qa-checklist.html" class="card">
+      <div>
+        <div class="card-icon">👁️</div>
+        <h2>Visual QA Checklist</h2>
+        <p>Ensure UI alignment, responsive behavior, and visual quality across browser windows.</p>
+      </div>
+      <span class="card-link">Launch Tool &rarr;</span>
+    </a>
+  </main>
+
 </body>
 </html>
