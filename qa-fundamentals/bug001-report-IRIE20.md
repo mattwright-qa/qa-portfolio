@@ -1,11 +1,11 @@
-# Boundary bug report: IRIE20
+# BUG-001 · Bug Report
 
 ## IRIE20 discount does not apply when cart total is exactly 10,000 JMD
 
 **Severity:** Major  ·  **Priority:** P2: High
-**Reproducibility:** Always (100%)
+**Reproducibility:** Always
 **Component:** cart
-**Environment:** Web.Chrome
+**Environment:** Chrome Version 151.0.7922.71 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
 
 ### Preconditions
 Logged in as a standard user with an existing cart totaling 10,000 JMD

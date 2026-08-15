@@ -1,6 +1,6 @@
 # Product promises and risks
 
-- IRIE20 gives 20% off orders of 10,000 JMD or more.
+- AC-1: IRIE20 gives 20% off orders of 10,000 JMD or more.
 
 - Delivery costs 500 JMD, free on orders of 15,000 JMD or more (before discount). Pickup is always free.
 
@@ -18,7 +18,7 @@
 
 # USER STORY
 
-## As a shopper, I want to sign in to my Tumble Kitchen account so I can reorder my usual dishes.
+## ***As a shopper, I want to sign in to my Tumble Kitchen account so I can reorder my usual dishes.
 
 # Criteria and Test Ideas
 
