@@ -5,13 +5,13 @@
 **Severity:** Major  ·  **Priority:** P1: Urgent
 **Reproducibility:** Always
 **Component:** cart
-**Environment:** Chrome Version 151.0.7922.71 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
+**Environment:** Chrome Version 151.0.7922.71 · Windows 11 · /practice/tumble-kitchen/
 
 ### Preconditions
 User is on the food ordering application and has access to the cart functionality.
 
 ### Steps to reproduce
-1. Navigate to the food ordering application at https://juliapottinger.com/practice/tumble-kitchen/
+1. Navigate to the food ordering application at /practice/tumble-kitchen/
 2. Add one dish to the cart
 3. Add a separate dish to the cart
 4. Open the cart and note the current total
