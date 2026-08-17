@@ -4,7 +4,7 @@
 
 - **Decision:** Hold release
 - **Build / commit:** N/A
-- **Environment:** Chrome Version 151.0.7922.71 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
+- **Environment:** Chrome Version 151.0.7922.71 · Windows 11 · /practice/tumble-kitchen/
 - **QA owner:** Matthew Wright
 - **Date:** 2026-08-15
 
