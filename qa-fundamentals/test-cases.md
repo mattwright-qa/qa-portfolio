@@ -1,6 +1,6 @@
 ## TC-001 · Verify IRIE20 applies 20% discount on order subtotal of exactly 10,000 JMD
 **Priority:** P1  ·  **Type:** Positive  ·  **Status:** Failed
-**Platform:** Chrome Version 151 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
+**Platform:** Chrome Version 151 · Windows 11 · /practice/tumble-kitchen/
 **Traceability:** AC-1
 
 | Field | Detail |
@@ -16,7 +16,7 @@
 
 ## TC-002 · Verify IRIE20 applies 20% discount on order subtotal exceeding 10,000 JMD
 **Priority:** P1  ·  **Type:** Positive  ·  **Status:** Passed
-**Platform:** Chrome Version 151 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
+**Platform:** Chrome Version 151 · Windows 11 · /practice/tumble-kitchen/
 **Traceability:** AC-1
 
 | Field | Detail |
@@ -32,7 +32,7 @@
 
 ## TC-003 · Verify IRIE20 is rejected when cart subtotal is boundary value 9,999 JMD
 **Priority:** P1  ·  **Type:** Negative  ·  **Status:** Passed
-**Platform:** Chrome Version 151 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
+**Platform:** Chrome Version 151 · Windows 11 · /practice/tumble-kitchen/
 **Traceability:** AC-1
 
 | Field | Detail |
@@ -48,7 +48,7 @@
 
 ## TC-004 · Verify error handling when applying invalid or nonexistent promo code
 **Priority:** P2  ·  **Type:** Negative  ·  **Status:** Ready to run
-**Platform:** Chrome Version 151 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
+**Platform:** Chrome Version 151 · Windows 11 · /practice/tumble-kitchen/
 **Traceability:** AC-1
 
 | Field | Detail |
@@ -64,7 +64,7 @@
 
 ## TC-005 · Verify error handling when submitting empty promo code input field
 **Priority:** P3  ·  **Type:** Negative  ·  **Status:** Ready to run
-**Platform:** Chrome Version 151 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
+**Platform:** Chrome Version 151 · Windows 11 · /practice/tumble-kitchen/
 **Traceability:** AC-1
 
 | Field | Detail |
@@ -80,7 +80,7 @@
 
 ## TC-006 · Verify IRIE20 cannot be applied multiple times to the same order
 **Priority:** P2  ·  **Type:** Negative  ·  **Status:** Ready to run
-**Platform:** Chrome Version 151 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
+**Platform:** Chrome Version 151 · Windows 11 · /practice/tumble-kitchen/
 **Traceability:** AC-1
 
 | Field | Detail |
@@ -96,7 +96,7 @@
 
 ## TC-007 · Verify IRIE20 cannot be stacked with another promotional code
 **Priority:** P2  ·  **Type:** Negative  ·  **Status:** Ready to run
-**Platform:** Chrome Version 151 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
+**Platform:** Chrome Version 151 · Windows 11 · /practice/tumble-kitchen/
 **Traceability:** AC-1
 
 | Field | Detail |
@@ -112,7 +112,7 @@
 
 ## TC-008 · Verify discount is revoked if item removal drops subtotal below 10,000 JMD
 **Priority:** P1  ·  **Type:** Negative  ·  **Status:** Ready to run
-**Platform:** Chrome Version 151 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
+**Platform:** Chrome Version 151 · Windows 11 · /practice/tumble-kitchen/
 **Traceability:** AC-1
 
 | Field | Detail |
