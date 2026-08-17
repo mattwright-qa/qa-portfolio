@@ -5,7 +5,7 @@
 **Severity:** Major  ·  **Priority:** P2: High
 **Reproducibility:** Always
 **Component:** cart
-**Environment:** Chrome Version 151.0.7922.71 · Windows 11 · https://juliapottinger.com/practice/tumble-kitchen/
+**Environment:** Chrome Version 151.0.7922.71 · Windows 11 · /practice/tumble-kitchen/
 
 ### Preconditions
 Logged in as a standard user with an existing cart totaling 10,000 JMD
